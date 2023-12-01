@@ -6,6 +6,8 @@ import prettytable
 from colorama import Fore
 import pyfiglet
 from pathlib import Path
+import qrcode as qr
+import requests
 
 
 def empty_file(filename):  # проверка пуст ли файл.txt
@@ -19,6 +21,7 @@ def create_file(file):  # создает файл если не найден в 
 
 
 class PasswordGenerator:  # Генератор паролей
+
     def __init__(self):
         self.alphabet = [chr(i) for i in range(97, 123)]
         self.saved_passwords = []  # Сохраненные пароли
@@ -282,7 +285,7 @@ class KeyGenerator:  # Генератор ключей
 
 class BruteForce:  # Создание brute force словарей
     def __init__(self):
-        self.user_inf = []  # Информация об жертве
+        self.user_inf = []  # Информация об пользователе
         self.menu_brut()
 
     def menu_brut(self):
@@ -435,7 +438,49 @@ class BruteForce:  # Создание brute force словарей
             self.menu_brut()
 
 
+class QRCodeFaer:
+
+    def __init__(self):
+        self.start()
+
+    def start(self):
+        try:
+            self.imput_link = input(
+                Fore.WHITE + 'Введите ссылку для генерации QRcode(для выхода в меню введите: "exit")\n>>')
+            if self.imput_link.strip().lower() == 'exit':
+                Generator()
+            self.responce = requests.get(self.imput_link.strip())
+            st_code = int(str(self.responce.status_code)[0])
+            match st_code:
+                case 2 | 3:
+                    name_cut = self.imput_link.split('/')[2].title()
+                    if '.' in name_cut:
+                        name_cut = name_cut.split('.')[0] + name_cut.split('.')[1]
+                    file_name = f"QRcode{name_cut}.png"
+                    img = qr.make(self.imput_link.strip())
+                    for i in tqdm.tqdm('Подождите QRcode генерируется'):
+                        time.sleep(0.05)
+                    print(Fore.GREEN + f'{file_name} успешно сгенерирован')
+                    while True:
+                        saved_choice = input(Fore.WHITE + 'Хотите сохранить сгенерированный QRcode(да/нет):\n>>')
+                        match saved_choice.strip().lower():
+                            case 'да':
+                                img.save(file_name)
+                                print(Fore.GREEN + f'{file_name} успешно сохранен')
+                                Generator()
+                            case 'нет':
+                                print(Fore.YELLOW + 'QRcode не был сохранен')
+                                Generator()
+                            case _:
+                                print(Fore.RED + 'Ошибка\nДля продолжения используйте только да/нет\nПопробуйте заново')
+        except:
+            print(Fore.RED + 'Error\nТакой ссылки не существует')
+            time.sleep(2)
+        Generator()
+
+
 class Generator:  # Главное меню
+
     def __init__(self):
         create_file('generated saved passwords.txt')
         create_file('saved_keys_photoshop.txt')
@@ -449,7 +494,7 @@ class Generator:  # Главное меню
             print(preview_text.renderText('GENERATOR by Faer'))
             print(Fore.MAGENTA + '   ==============\n        Меню\n   ==============')
             self.menu_choice = input(
-                Fore.MAGENTA + '1.Генератор паролей\n2.Генератор ключей\n3.Создание Brute Force словарей\n4.Выйти\n>>')
+                Fore.MAGENTA + '1.Генератор паролей\n2.Генератор ключей\n3.Создание Brute Force словарей\n4.Генератор QRcode\n5.Выйти\n>>')
             match self.menu_choice.strip().lower():
                 case '1':
                     PasswordGenerator()
@@ -458,6 +503,8 @@ class Generator:  # Главное меню
                 case '3':
                     BruteForce()
                 case '4':
+                    QRCodeFaer()
+                case '5':
                     exit()
                 case _:
                     print(Fore.RED + f'Ошибка\nКоманды {self.menu_choice} не существует\nПопробуйте еще раз')
